@@ -1,0 +1,236 @@
+#!/bin/bash
+
+### 1. Parse parameters
+SEARCH_TERM=$1
+
+### 2. Prepare tmp files
+if [ -z "$TMPDIR" ]; then
+    TMPDIR=/tmp/
+fi
+RAW=$(mktemp ${TMPDIR}EncodeRaw-XXXXXXXX)
+
+PART1=$(mktemp ${TMPDIR}EncodePart1-XXXXXXXX)
+PART2=$(mktemp ${TMPDIR}EncodePart2-XXXXXXXX)
+PART3=$(mktemp ${TMPDIR}EncodePart3-XXXXXXXX)
+
+BIOSAMPLE=$(mktemp ${TMPDIR}EncodeBiosample-XXXXXXXX)
+CONTROLS=$(mktemp ${TMPDIR}EncodeControls-XXXXXXXX)
+EXPERIMENT=$(mktemp ${TMPDIR}EncodeExperiment-XXXXXXXX)
+FILES=$(mktemp ${TMPDIR}EncodeFiles-XXXXXXXX)
+REPLICATES=$(mktemp ${TMPDIR}EncodeReplicates-XXXXXXXX)
+TREATMENT=$(mktemp ${TMPDIR}EncodeTreatment-XXXXXXXX)
+
+>&2 echo ${RAW}
+>&2 echo ${PART1}
+>&2 echo ${PART2}
+>&2 echo ${PART3}
+>&2 echo ${BIOSAMPLE}
+>&2 echo ${CONTROLS}
+>&2 echo ${EXPERIMENT}
+>&2 echo ${FILES}
+>&2 echo ${REPLICATES}
+>&2 echo ${TREATMENT}
+
+### 3. Query ENCODE
+ENCODE_SEARCH_URL="https://www.encodeproject.org/search/?searchTerm="
+ENCODE_SEARCH_OPTIONS="&frame=embedded&limit=all"
+
+
+>&2 echo "Querying ENCODE and saving results to: ${RAW}"
+time curl -sH "Accept: application/json" \
+	${ENCODE_SEARCH_URL}"${SEARCH_TERM}"${ENCODE_SEARCH_OPTIONS} > ${RAW}
+>&2 echo "Done!"
+
+### 4. Parse the results
+>&2 echo "Get biosample"
+cat ${RAW} |
+jq -c '.["@graph"][].replicates[]?.library.biosample | {
+	biosample_accession: .accession,
+	biosample_type,
+	source_title: .source.title,
+	donor_accession: .donor.accession,
+	donor_ethnicity: .donor.ethnicity,
+	donor_health_status: .donor.health_status,
+	product_id,
+	biosample_term_name,
+}' |
+json2csv -p -k \
+biosample_accession,\
+biosample_type,\
+source_title,\
+donor_accession,\
+donor_ethnicity,\
+donor_health_status,\
+product_id,\
+biosample_term_name \
+> ${BIOSAMPLE}
+
+
+>&2 echo "Get controls"
+echo "experiment_accession,control_accession" > ${CONTROLS}
+cat ${RAW} |
+jq -c '.["@graph"][] | {
+	experiment_accession: .accession,
+	control_accession: .possible_controls[]?.accession,
+}'  |
+json2csv -k \
+experiment_accession,\
+control_accession \
+>> ${CONTROLS}
+
+>&2 echo "Get experiment"
+cat ${RAW} |
+jq -c '.["@graph"][] | {
+	experiment_accession: .accession,
+	file_accession: .files[]?.accession,
+	biosample_type,
+	run_type,
+	assembly,
+	assay_term_name,
+	dataset_type,
+	biosample_term_name,
+	date_released,
+	lab: .lab.title
+}' |
+jq -c '.' |
+json2csv -p -k \
+experiment_accession,\
+file_accession,\
+biosample_type,\
+run_type,\
+assembly,\
+assay_term_name,\
+dataset_type,\
+biosample_term_name,\
+date_released,\
+lab \
+| csvgrep -c dataset_type -m "experiment" \
+> ${EXPERIMENT} 
+
+
+>&2 echo "Get files"
+cat ${RAW} |
+jq -c '.["@graph"][].files[]? | {
+	file_accession: .accession,
+	href,
+	file_format,
+        paired_end: .paired_end,
+	replicate_uuid: .replicate.uuid,
+	replicate_experiment_accession: .replicate.experiment.accession,
+	status,
+	assembly,
+	submitted_by_title: .submitted_by.title,
+	output_type,
+	md5sum,
+	date_created
+}' |
+jq -c '.' |
+json2csv -p -k \
+file_accession,\
+href,\
+file_format,\
+paired_end,\
+replicate_uuid,\
+replicate_experiment_accession,\
+status,\
+assembly,\
+submitted_by_title,\
+output_type,\
+md5sum,\
+date_created \
+> ${FILES}
+
+>&2 echo "Get replicates"
+cat ${RAW} |
+jq -c '.["@graph"][] | {
+	experiment_accession: .accession,
+	replicate: .replicates[]? | {
+		uuid,
+		status,
+		biological_replicate_number,
+		technical_replicate_number,
+		paired_ended,
+		biosample_term_name: .library.biosample.biosample_term_name,
+		library_accession: .library.accession,
+		biosample_accession: .library.biosample.accession,
+		date_created
+	}
+}' |
+jq -c '.' |
+json2csv -p -k \
+experiment_accession,\
+replicate.uuid,\
+replicate.status,\
+replicate.biological_replicate_number,\
+replicate.technical_replicate_number,\
+replicate.paired_ended,\
+replicate.biosample_term_name,\
+replicate.library_accession,\
+replicate.biosample_accession,\
+replicate.date_created \
+| csvgrep -c replicate.status -m "released" \
+| sed 's/replicate\.//g' \
+> ${REPLICATES}
+
+>&2 echo "Get treatment"
+echo "biosample_accession,treatment_term_name" > ${TREATMENT}
+cat ${RAW} |
+jq -c '.["@graph"][].replicates[]?.library.biosample | {
+	biosample_accession: .accession,
+	treatment: .treatments[]? | { treatment_term_name}
+}' |
+jq -c '.' |
+json2csv -k \
+biosample_accession,\
+treatment.treatment_term_name \
+>> ${TREATMENT}
+
+### 5. Join the results
+>&2 echo "Join parts"
+>&2 echo "Part 1"
+csvjoin --left -c experiment_accession ${EXPERIMENT} ${CONTROLS} \
+	 > ${PART1}
+>&2 echo "Part 2"
+csvjoin --left -c biosample_accession ${REPLICATES} ${TREATMENT} \
+	| body sort | body uniq | \
+	csvcut -c experiment_accession,biological_replicate_number,technical_replicate_number,treatment_term_name \
+	> ${PART2}
+>&2 echo "Part 3"
+csvjoin --left -c experiment_accession ${PART1} ${PART2} > ${PART3}
+>&2 echo "Part 4"
+csvjoin --left -c file_accession \
+	<(csvcut -c file_accession,file_format,paired_end,status,href,md5sum ${FILES}) \
+	${PART3} |\
+csvcut -c \
+experiment_accession,\
+file_accession,\
+control_accession,\
+file_format,\
+paired_end,\
+assay_term_name,\
+run_type,\
+treatment_term_name,\
+biological_replicate_number,\
+technical_replicate_number,\
+href,\
+md5sum,\
+biosample_type,\
+biosample_term_name,\
+assembly,\
+dataset_type,\
+lab,\
+date_released,\
+status
+
+### 6. Clean tmp
+rm -f ${PART1}
+rm -f ${PART2}
+rm -f ${PART3}
+rm -f ${BIOSAMPLE}
+rm -f ${CONTROLS}
+rm -f ${EXPERIMENT}
+rm -f ${FILES}
+rm -f ${LIBRARY}
+rm -f ${REPLICATES}
+rm -f ${TREATMENT}
+rm -f ${RAW}
