@@ -201,9 +201,9 @@ csvjoin --left -c biosample_accession ${REPLICATES} ${TREATMENT} \
 csvjoin --left -c experiment_accession ${PART1} ${PART2} > ${PART3}
 >&2 echo "Part 4"
 csvjoin --left -c file_accession \
+	${PART3} \
 	<(csvcut -c file_accession,file_format,paired_end,status,href,md5sum ${FILES}) \
-	${PART3} |\
-csvcut -c \
+| csvcut -c \
 experiment_accession,\
 file_accession,\
 control_accession,\
