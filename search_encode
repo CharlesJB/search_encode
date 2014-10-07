@@ -117,6 +117,8 @@ jq -c '.["@graph"][].files[]? | {
         paired_end: .paired_end,
 	replicate_uuid: .replicate.uuid,
 	replicate_experiment_accession: .replicate.experiment.accession,
+	biological_replicate_number: .replicate.biological_replicate_number,
+	technical_replicate_number: .replicate.technical_replicate_number,
 	status,
 	assembly,
 	submitted_by_title: .submitted_by.title,
@@ -132,6 +134,8 @@ file_format,\
 paired_end,\
 replicate_uuid,\
 replicate_experiment_accession,\
+biological_replicate_number,\
+technical_replicate_number,\
 status,\
 assembly,\
 submitted_by_title,\
@@ -194,7 +198,7 @@ csvjoin --left -c experiment_accession ${EXPERIMENT} ${CONTROLS} \
 csvjoin --left -c biosample_accession ${REPLICATES} ${TREATMENT} \
 	| body sort \
 	| body uniq \
-	| csvcut -c experiment_accession,biological_replicate_number,technical_replicate_number,treatment_term_name \
+	| csvcut -c experiment_accession,treatment_term_name \
 	| csvgrep -ic treatment_term_name -m "" \
 	> ${PART2}
 >&2 echo "Part 3"
@@ -202,7 +206,9 @@ csvjoin --left -c experiment_accession ${PART1} ${PART2} > ${PART3}
 >&2 echo "Part 4"
 csvjoin --left -c file_accession \
 	${PART3} \
-	<(csvcut -c file_accession,file_format,paired_end,status,href,md5sum ${FILES}) \
+	<(csvcut -c file_accession,file_format,paired_end,biological_replicate_number,technical_replicate_number,status,href,md5sum ${FILES}) \
+	| body sort \
+	| body uniq \
 | csvcut -c \
 experiment_accession,\
 file_accession,\
