@@ -84,6 +84,7 @@ jq -c '.["@graph"][] | {
 	experiment_accession: .accession,
 	file_accession: .files[]?.accession,
 	biosample_type,
+	target: .target.label,
 	run_type,
 	assembly,
 	assay_term_name,
@@ -97,6 +98,7 @@ json2csv -p -k \
 experiment_accession,\
 file_accession,\
 biosample_type,\
+target,\
 run_type,\
 assembly,\
 assay_term_name,\
@@ -217,6 +219,7 @@ csvjoin --left -c file_accession \
 | csvcut -c \
 experiment_accession,\
 file_accession,\
+target,\
 control_accession,\
 file_format,\
 paired_end,\
