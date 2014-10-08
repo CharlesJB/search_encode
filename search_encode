@@ -147,8 +147,7 @@ submitted_by_title,\
 output_type,\
 md5sum,\
 date_created |\
-csvgrep -c status -m "released" |\
-cols -c paired_with body "cut -f3 -d'/'" \
+csvgrep -c status -m "released" \
 > ${FILES}
 
 >&2 echo "Get replicates"
