@@ -90,9 +90,9 @@ jq -c '.["@graph"][] | {
 	dataset_type,
 	biosample_term_name,
 	date_released,
-	lab: .lab.title
+	lab: .lab.title,
+	status: .status
 }' |
-jq -c '.' |
 json2csv -p -k \
 experiment_accession,\
 file_accession,\
@@ -103,8 +103,10 @@ assay_term_name,\
 dataset_type,\
 biosample_term_name,\
 date_released,\
-lab \
+lab,\
+status\
 | csvgrep -c dataset_type -m "experiment" \
+| csvgrep -c status -m "released" \
 > ${EXPERIMENT} 
 
 
@@ -114,7 +116,8 @@ jq -c '.["@graph"][].files[]? | {
 	file_accession: .accession,
 	href,
 	file_format,
-        paired_end: .paired_end,
+        paired_end,
+	paired_with,
 	replicate_uuid: .replicate.uuid,
 	replicate_experiment_accession: .replicate.experiment.accession,
 	biological_replicate_number: .replicate.biological_replicate_number,
@@ -126,12 +129,12 @@ jq -c '.["@graph"][].files[]? | {
 	md5sum,
 	date_created
 }' |
-jq -c '.' |
 json2csv -p -k \
 file_accession,\
 href,\
 file_format,\
 paired_end,\
+paired_with,\
 replicate_uuid,\
 replicate_experiment_accession,\
 biological_replicate_number,\
@@ -141,7 +144,9 @@ assembly,\
 submitted_by_title,\
 output_type,\
 md5sum,\
-date_created \
+date_created |\
+csvgrep -c status -m "released" |\
+cols -c paired_with body "cut -f3 -d'/'" \
 > ${FILES}
 
 >&2 echo "Get replicates"
@@ -206,7 +211,7 @@ csvjoin --left -c experiment_accession ${PART1} ${PART2} > ${PART3}
 >&2 echo "Part 4"
 csvjoin --left -c file_accession \
 	${PART3} \
-	<(csvcut -c file_accession,file_format,paired_end,biological_replicate_number,technical_replicate_number,status,href,md5sum ${FILES}) \
+	<(csvcut -c file_accession,file_format,paired_end,paired_with,biological_replicate_number,technical_replicate_number,status,href,md5sum ${FILES}) \
 	| body sort \
 	| body uniq \
 | csvcut -c \
@@ -215,6 +220,7 @@ file_accession,\
 control_accession,\
 file_format,\
 paired_end,\
+paired_with,\
 assay_term_name,\
 run_type,\
 treatment_term_name,\
