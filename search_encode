@@ -249,4 +249,4 @@ rm -f ${FILES}
 rm -f ${LIBRARY}
 rm -f ${REPLICATES}
 rm -f ${TREATMENT}
-rm -f ${RAW}
+#rm -f ${RAW}
