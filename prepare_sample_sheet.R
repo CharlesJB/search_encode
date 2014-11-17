@@ -1,7 +1,8 @@
 ### Parse parameters
 argv <- commandArgs(trailingOnly = TRUE)
 input <- argv[1]
-output <- argv[2]
+specie <- argv[2]
+output <- argv[3]
 
 ### Prepare metadata object
 metadata <- read.csv(input, stringsAsFactors = FALSE)
@@ -21,7 +22,7 @@ fa <- metadata[["file_accession"]]
 brn <- metadata[["biological_replicate_number"]]
 trn <- metadata[["technical_replicate_number"]]
 
-metadata[["Name"]] <- paste("Hosa", bst, tg, ea, fa, brn, trn, sep = "_")
+metadata[["Name"]] <- paste(specie, bst, tg, ea, fa, brn, trn, sep = "_")
 
 ### Initialize sample sheet
 sample_sheet <- data.frame(Name = character(length(single) + length(paired)))
