@@ -23,12 +23,16 @@ get_paired_names <- function() {
     accession_1 <- metadata[["file_accession"]][i]
     j <- get_replicate_accession(i)
     accession_2 <- unique(metadata[["file_accession"]][j])
+    brn <- metadata[["biological_replicate_number"]][i]
+    trn <- metadata[["technical_replicate_number"]][i]
     to_paste <- paste("Hosa",
                   unique(metadata[["biosample_term_name"]][i]),
                   target,
                   experiment_accession,
                   accession_1,
                   accession_2,
+                  brn,
+                  trn,
                   sep = "_")
     res[idx] <- to_paste 
     idx <- idx + 1
@@ -57,6 +61,8 @@ if (length(single) > 0) {
                                 metadata[["target"]][single],
                                 metadata[["experiment_accession"]][single],
                                 metadata[["file_accession"]][single],
+                                metadata[["biological_replicate_number"]][single],
+                                metadata[["technical_replicate_number"]][single],
                                 sep = "_")
 }
 metadata[["Name"]][paired] <- get_paired_names()
