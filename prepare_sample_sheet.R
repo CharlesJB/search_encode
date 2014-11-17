@@ -42,7 +42,9 @@ sample_sheet[["Filename Prefix"]] <- "X"
 
 ### Populate sample sheet
 sample_sheet$Name <- c(metadata[["Name"]][single], metadata[["Name"]][paired])
-sample_sheet[["Run Type"]][1:length(single)] <- "SINGLE_END"
+if (length(single) > 0) {
+  sample_sheet[["Run Type"]][1:length(single)] <- "SINGLE_END"
+}
 sample_sheet["Filename Prefix"] <- sample_sheet[["Name"]]
 sample_sheet["FASTQ1"] <- paste(sample_sheet[["Name"]], "fastq.gz", sep = ".")
 
