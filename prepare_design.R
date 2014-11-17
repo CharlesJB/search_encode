@@ -25,7 +25,7 @@ get_paired_names <- function() {
     accession_2 <- unique(metadata[["file_accession"]][j])
     brn <- metadata[["biological_replicate_number"]][i]
     trn <- metadata[["technical_replicate_number"]][i]
-    to_paste <- paste("Hosa",
+    to_paste <- paste(specie,
                   unique(metadata[["biosample_term_name"]][i]),
                   target,
                   experiment_accession,
@@ -43,7 +43,8 @@ get_paired_names <- function() {
 ### Parse parameters
 argv <- commandArgs(trailingOnly = TRUE)
 input <- argv[1]
-output <- argv[2]
+specie <- argv[2]
+output <- argv[3]
 
 ### Prepare metadata object
 metadata <- read.csv(input)
@@ -56,7 +57,7 @@ paired2 <- which(metadata[["run_type"]] == "Paired-ended"
 
 metadata[["Name"]] <- ""
 if (length(single) > 0) {
-  metadata[["Name"]][single] <- paste("Hosa",
+  metadata[["Name"]][single] <- paste(specie,
                                 metadata[["biosample_term_name"]][single],
                                 metadata[["target"]][single],
                                 metadata[["experiment_accession"]][single],
@@ -83,7 +84,7 @@ for (exp_accession in unique_accession) {
         i <- metadata[["file_accession"]] == file_accession
         current_biosample <- metadata[["biosample_term_name"]][which(i)[1]]
         current_target <- metadata[["target"]][which(i)[1]]
-        current_column <- paste("Hosa",
+        current_column <- paste(specie,
                             current_biosample,
                             current_target,
                             exp_accession,
@@ -117,7 +118,7 @@ for (exp_accession in unique_accession) {
       i <- metadata[["experiment_accession"]] == exp_accession
       current_biosample <- metadata[["biosample_term_name"]][which(i)[1]]
       current_target <- metadata[["target"]][which(i)[1]]
-      current_column <- paste("Hosa",
+      current_column <- paste(specie,
                           current_biosample,
                           current_target,
                           exp_accession,
