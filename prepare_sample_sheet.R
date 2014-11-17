@@ -63,9 +63,9 @@ if (length(paired) > 0) {
     sample_sheet[["Name"]][i] <- new_name
     sample_sheet[["Filename Prefix"]][i] <- new_name
     # Add FASTQ1 and FASTQ2
-    sample_sheet[["FASTQ1"]] <- paste0(paste(tokens, collapse="_"), ".fastq.gz")
+    sample_sheet[["FASTQ1"]][i] <- paste0(paste(tokens, collapse="_"), ".fastq.gz")
     fastq_2 <- paste(c(tokens[1:4], pair_2, tokens[6:length(tokens)]), collapse = "_")
-    sample_sheet[["FASTQ2"]] <- paste0(fastq_2, ".fastq.gz")
+    sample_sheet[["FASTQ2"]][i] <- paste0(fastq_2, ".fastq.gz")
   }
 }
 
