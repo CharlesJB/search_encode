@@ -19,10 +19,8 @@ tg <- metadata[["target"]]
 tg[tg == ""] <- "NA"
 ea <- metadata[["experiment_accession"]]
 fa <- metadata[["file_accession"]]
-brn <- metadata[["biological_replicate_number"]]
-trn <- metadata[["technical_replicate_number"]]
 
-metadata[["Name"]] <- paste(specie, bst, tg, ea, fa, brn, trn, sep = "_")
+metadata[["Name"]] <- paste(specie, bst, tg, ea, fa, sep = "_")
 
 ### Initialize sample sheet
 sample_sheet <- data.frame(Name = character(length(single) + length(paired)))
@@ -42,11 +40,12 @@ sample_sheet[["Filename Prefix"]] <- "X"
 
 ### Populate sample sheet
 sample_sheet$Name <- c(metadata[["Name"]][single], metadata[["Name"]][paired])
+file1_accession <- c(metadata[["file_accession"]][single], metadata[["file_accession"]][paired])
 if (length(single) > 0) {
   sample_sheet[["Run Type"]][1:length(single)] <- "SINGLE_END"
 }
-sample_sheet["Filename Prefix"] <- sample_sheet[["Name"]]
-sample_sheet["FASTQ1"] <- paste(sample_sheet[["Name"]], "fastq.gz", sep = ".")
+sample_sheet[["Filename Prefix"]] <- sample_sheet[["Name"]]
+sample_sheet[["FASTQ1"]] <- paste0("raw_data/", file1_accession, ".fastq.gz")
 
 if (length(paired) > 0) {
   ## Add FASTQ files and paired Name
@@ -55,17 +54,16 @@ if (length(paired) > 0) {
   # paired files section of sample_sheet.
   for (i in (length(single)+1):nrow(sample_sheet)) {
     # Set the correct Name and Filename Prefix
-    tokens <- unlist(strsplit(sample_sheet[["Name"]][i], "_"))
-    pair_1 <- tokens[5]
+    name <- sample_sheet[["Name"]][i]
+    pair_1 <- file1_accession[i]
     pair_2 <- metadata[metadata[["paired_with"]] == pair_1,][["file_accession"]]
-    pair_2 <- as.character(pair_2)
-    new_name <- paste(c(tokens[1:5], pair_2, tokens[6:length(tokens)]), collapse = "_")
+    pair_2 <- unique(as.character(pair_2))
+    new_name <- paste(name, pair_1, pair_2, sep  = "_")
     sample_sheet[["Name"]][i] <- new_name
     sample_sheet[["Filename Prefix"]][i] <- new_name
     # Add FASTQ1 and FASTQ2
-    sample_sheet[["FASTQ1"]][i] <- paste0(paste(tokens, collapse="_"), ".fastq.gz")
-    fastq_2 <- paste(c(tokens[1:4], pair_2, tokens[6:length(tokens)]), collapse = "_")
-    sample_sheet[["FASTQ2"]][i] <- paste0(fastq_2, ".fastq.gz")
+    sample_sheet[["FASTQ1"]][i] <- paste0("raw_data/", pair_1, ".fastq.gz")
+    sample_sheet[["FASTQ2"]][i] <- paste0("raw_data/", pair_2, ".fastq.gz")
   }
 }
 
