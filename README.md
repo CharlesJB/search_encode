@@ -1,7 +1,7 @@
 search_encode
 =============
 
-The `search_encode` tool was created to easily fetch ENCODE's files metadata.
+The `search_encode` tool was created to easily fetch ENCODE's files metadata and save them in csv format.
 
 The tool will do a search in the ENCODE database using their REST API
 (https://www.encodeproject.org/help/rest-api/).
@@ -18,4 +18,9 @@ search_encode SEARCH_TERM
 
 	SEARCH_TERM: The same search term that would be used to search the
 		     ENCODE project web portal (https://www.encodeproject.org/)
+```
+
+### Example
+```
+./search_encode "rna-seq+homo+sapiens+esc" > ENCODE_RNA-Seq_hESC.csv
 ```
