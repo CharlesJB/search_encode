@@ -2,7 +2,7 @@
 
 ### 0. Declare functions
 usage() {
-cat << EOF
+>&2 cat << EOF
 
 search_encode: Quickly fetch ENCODE's file metadata.
 
