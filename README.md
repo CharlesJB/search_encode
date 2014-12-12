@@ -22,5 +22,5 @@ search_encode SEARCH_TERM
 
 ### Example
 ```
-./search_encode "rna-seq+homo+sapiens+esc" > ENCODE_RNA-Seq_hESC.csv
+search_encode "rna-seq+homo+sapiens+esc" > ENCODE_RNA-Seq_hESC.csv
 ```
